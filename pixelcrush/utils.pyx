@@ -1,6 +1,6 @@
 #cython: language_level=3
 
-def count_leading_ones_byte(hash_byte: int):
+cdef unsigned char count_leading_ones_byte(unsigned char hash_byte):
     """ Determines the amount of leading set bits in a byte, starting from the most significant (assuming little endian)
 
     Parameters
@@ -12,8 +12,8 @@ def count_leading_ones_byte(hash_byte: int):
     -------
         the amount of leading ones, counting from most significant
     """
-    comparator = 1 << 7
-    count = 0
+    cdef unsigned char comparator = 1 << 7
+    cdef unsigned char count = 0
     while comparator > 0:
         if comparator & hash_byte:
             count += 1
@@ -23,7 +23,7 @@ def count_leading_ones_byte(hash_byte: int):
     return count
 
 
-def count_leading_ones(hash_value: bytes):
+cpdef unsigned short count_leading_ones(bytes hash_value):
     """ Determines the amount of leading set bits in a byte array,
     starting from most significant (assuming little endian)
 
@@ -35,7 +35,8 @@ def count_leading_ones(hash_value: bytes):
     -------
         the amount of leading ones, counting from most significant
     """
-    count = 0
+    cdef unsigned short count = 0
+    cdef unsigned char byte_count = 0
     for b in hash_value:
         byte_count = count_leading_ones_byte(b)
         count += byte_count
@@ -44,7 +45,7 @@ def count_leading_ones(hash_value: bytes):
     return count
 
 
-def heat_gradient(hardness: int, rgb: bool = True):
+def heat_gradient(unsigned char hardness, rgb: bool = True):
     """ returns an rgb value for a provided heat value between 0 and 255
 
     Parameters
@@ -58,7 +59,6 @@ def heat_gradient(hardness: int, rgb: bool = True):
     -------
 
     """
-    hardness = max(0, min(255, hardness))
     if not rgb:
         # return greyscale for UIs to interpret
         return hardness, hardness, hardness
