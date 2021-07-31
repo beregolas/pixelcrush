@@ -1,3 +1,5 @@
+![Python Version 3.9](https://img.shields.io/badge/Python-3.9-informational?style=flat-square&logo=appveyor)
+
 # pixelcrush
 
 > Crush those pixels! A "place" clone that uses proof of work.
