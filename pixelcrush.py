@@ -10,7 +10,6 @@ import time
 
 POST_STRUCT = struct.Struct('<HH3B16s' + str(HASH_BYTES) + 's')  # X, Y, R, G, B, Nonce, Hash
 OVERWRITE_STRUCT = struct.Struct('<HH3B')  # X, Y, R, G, B
-ADMIN_HASH = b'\x8f\xec\x8f\x2e\xb9\x43\x3f\xb2\xf5\xf8\xa6\x39\x38\x30\x69\x0d\x71\x6d\xed\x53\x45\x37\x62\xbf\x99\x74\x53\xf4\x25\xec\x44\xbf'
 
 class CrushState:
 
@@ -74,33 +73,6 @@ class CrushState:
 
 if __name__ == "__main__":
     app = Flask(__name__)
-
-    @app.route("/place.png")
-    def place_png():
-        png_data = app.crusher.produce_png()
-        return Response(png_data, mimetype='image/png')
-
-
-    @app.route("/heatmap.png")
-    def heatmap_png():
-        heatmap_data = app.crusher.produce_heatmap()
-        return Response(heatmap_data, mimetype='image/png')
-
-
-    # $ echo -ne 'a\0' | curl -s 'http://127.0.0.1:5000/row_hardness' --data-binary @- | hd
-    @app.route("/row_hardness", methods=["POST"])
-    def row_hardness():
-        request_data = request.get_data()
-        try:
-            y, = struct.unpack('<H', request_data)
-        except struct.error:
-            return make_response('Expected 2 bytes, little-endian, encoding the y-value of the row', 400)
-
-        if y >= SIZE[1]:
-            return make_response('Out of {} bounds ({:04x})'.format(SIZE, y), 400)
-
-        return make_response(b''.join(app.crusher.hardness_at(y)), 200)
-
 
     # $ echo -ne 'a\0b\0zA 0123456789abcdef\x2f\x71\x27\xb9\x7e\xa1\x25\x18\x06\xed\x37\xa3\x6f\xf0\xa1\x5a\xf4\x03\x07\xdd\x42\x60\x5b\x22\x42\x42\xbf\xa1\xde\x13\xce\xe0' | curl -s 'http://127.0.0.1:5000/post' --data-binary @- | hd
     @app.route("/post", methods=["POST"])
@@ -174,12 +146,6 @@ if __name__ == "__main__":
         app.crusher.overwrite((x, y), (r, g, b))
 
         return ':)'
-
-
-    @app.before_first_request
-    def init_crusher():
-        app.crusher = CrushState()
-
 
     app.run()
 

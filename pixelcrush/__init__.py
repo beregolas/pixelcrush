@@ -2,6 +2,7 @@ import hashlib
 from os import getenv
 from dotenv import load_dotenv
 from flask import Flask
+from flask_apscheduler import APScheduler
 
 from .authentication import register_authentication
 from .crusher import Crusher
@@ -37,7 +38,7 @@ def create_app():
     )
 
     # 3) initialize the crusher
-    # app.crusher = Crusher('')
+    app.crusher = Crusher('tesd')
 
     # 4) register all paths with our app
     register_paths(app)

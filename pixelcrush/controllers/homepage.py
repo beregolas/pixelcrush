@@ -1,5 +1,5 @@
 from os import getenv
-from flask import Blueprint, current_app as app, redirect
+from flask import Blueprint, redirect
 
 bp = Blueprint('homepage', __name__)
 

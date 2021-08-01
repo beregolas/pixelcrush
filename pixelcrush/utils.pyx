@@ -1,5 +1,16 @@
 #cython: language_level=3
 
+byte_map = [0, 128, 192, 224, 240, 248, 252, 254, 255]
+
+cdef unsigned char[256] _leading_map
+cdef unsigned char l = 0
+# Fill the leading map with
+for i in range(256):
+    if i >= byte_map[l+1]:
+        l += 1
+    _leading_map[i] = l
+
+
 cdef unsigned char count_leading_ones_byte(unsigned char hash_byte):
     """ Determines the amount of leading set bits in a byte, starting from the most significant (assuming little endian)
 
@@ -12,18 +23,10 @@ cdef unsigned char count_leading_ones_byte(unsigned char hash_byte):
     -------
         the amount of leading ones, counting from most significant
     """
-    cdef unsigned char comparator = 1 << 7
-    cdef unsigned char count = 0
-    while comparator > 0:
-        if comparator & hash_byte:
-            count += 1
-            comparator = comparator >> 1
-        else:
-            break
-    return count
+    return _leading_map[hash_byte]
 
 
-cpdef unsigned short count_leading_ones(bytes hash_value):
+cpdef unsigned short count_leading_ones(hash_value: bytes):
     """ Determines the amount of leading set bits in a byte array,
     starting from most significant (assuming little endian)
 
@@ -45,7 +48,21 @@ cpdef unsigned short count_leading_ones(bytes hash_value):
     return count
 
 
-def heat_gradient(unsigned char hardness, rgb: bool = True):
+cpdef set_leading_ones(unsigned int leading_ones, unsigned int length):
+    bytes_out = []
+    for b in range(length):
+        if leading_ones > 8:
+            leading_ones -= 8
+            bytes_out.append(byte_map[8])
+        elif leading_ones > 0:
+            bytes_out.append(byte_map[leading_ones])
+            leading_ones = 0
+        else:
+            bytes_out.append(0)
+    return bytes(bytes_out)
+
+
+cpdef heat_gradient(unsigned char hardness, rgb: bool = True):
     """ returns an rgb value for a provided heat value between 0 and 255
 
     Parameters

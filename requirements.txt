@@ -1,3 +1,4 @@
+APScheduler==3.7.0
 asgiref==3.4.1
 certifi==2021.5.30
 charset-normalizer==2.0.4
@@ -5,6 +6,7 @@ click==8.0.1
 Cython==0.29.24
 Django==3.2.5
 Flask==2.0.1
+Flask-APScheduler==1.12.2
 idna==3.2
 in-place==0.5.0
 itsdangerous==2.0.1
@@ -12,10 +14,12 @@ Jinja2==3.0.1
 MarkupSafe==2.0.1
 numpy==1.21.1
 Pillow==8.3.1
+python-dateutil==2.8.2
 python-dotenv==0.19.0
 pytz==2021.1
 requests==2.26.0
 six==1.16.0
 sqlparse==0.4.1
+tzlocal==2.1
 urllib3==1.26.6
 Werkzeug==2.0.1
