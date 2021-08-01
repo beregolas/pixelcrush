@@ -3,8 +3,9 @@ from os import getenv
 from dotenv import load_dotenv
 from flask import Flask
 
+from .authentication import register_authentication
 from .crusher import Crusher
-from .controllers import images
+from .controllers import images, homepage, place
 
 
 class MissingEnvironmentException(Exception):
@@ -41,6 +42,9 @@ def create_app():
     # 4) register all paths with our app
     register_paths(app)
 
+    # 5) setup authentication
+    register_authentication(app)
+
     return app
 
 
@@ -57,3 +61,5 @@ def register_paths(app):
 
     """
     app.register_blueprint(images.bp)
+    app.register_blueprint(homepage.bp)
+    app.register_blueprint(place.bp)
