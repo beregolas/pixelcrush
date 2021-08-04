@@ -11,21 +11,6 @@ for i in range(256):
     _leading_map[i] = l
 
 
-cdef unsigned char count_leading_ones_byte(unsigned char hash_byte):
-    """ Determines the amount of leading set bits in a byte, starting from the most significant (assuming little endian)
-
-    Parameters
-    ----------
-    hash_byte
-        a single byte / an integer with values between 0 and 255
-
-    Returns
-    -------
-        the amount of leading ones, counting from most significant
-    """
-    return _leading_map[hash_byte]
-
-
 cpdef unsigned short count_leading_ones(hash_value: bytes):
     """ Determines the amount of leading set bits in a byte array,
     starting from most significant (assuming little endian)
@@ -41,7 +26,7 @@ cpdef unsigned short count_leading_ones(hash_value: bytes):
     cdef unsigned short count = 0
     cdef unsigned char byte_count = 0
     for b in hash_value:
-        byte_count = count_leading_ones_byte(b)
+        byte_count = _leading_map[b]
         count += byte_count
         if byte_count < 8:
             break

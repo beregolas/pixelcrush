@@ -1,22 +1,21 @@
 import hashlib
 import json
-import math
 import string
 from os import getenv
 from typing import Union
 import numpy as np
 import pyximport
+from PIL import Image
 pyximport.install()
 from pixelcrush.utils import set_leading_ones, count_leading_ones
 
-
-hash_function = hashlib.new(getenv('HASH_ALGORITHM', 'sha256'))
+hash_function = hashlib.new('sha256')
 hash_length = hash_function.digest_size
 
 starting_hardness = int(getenv('STARTING_HARDNESS', '0'))
 
 
-class CrusherData:
+class Crusher:
 
     name: string
 
@@ -41,11 +40,10 @@ class CrusherData:
                     .reshape((self.size[0], self.size[1], 3))
                 self.hashes = np.fromfile(hashes_file, dtype=np.uint8, count=-1)\
                     .reshape((self.size[0], self.size[1], hash_length))
-                self.hardness = np.zeros((self.size[0], self.size[1]))
+                self.hardness = np.zeros((self.size[0], self.size[1]), dtype=np.int32)
                 for i in range(self.size[0]):
                     for j in range(self.size[1]):
                         self.hardness[i, j] = count_leading_ones(self.hashes[i, j].tobytes())
-            pass
         except FileNotFoundError:
             # some files could not be loaded. Restart with new files
             self._new_data(list(map(lambda x: int(x), getenv('IMAGE_SIZE').split(','))))
@@ -57,8 +55,6 @@ class CrusherData:
                 json.dump(meta, meta_file, ensure_ascii=False, indent=4)
             # save the actual data
             self.save()
-            pass
-        pass
 
     def save(self):
         self.image.tofile(self.file_name('image'))
@@ -76,6 +72,8 @@ class CrusherData:
         self.size = size[0], size[1]
 
         self.image = np.zeros((self.size[0], self.size[1], 3), dtype=np.uint8)
+        self.image[::] = 255
+
         self.hashes = np.full(
             (self.size[0], self.size[1], hash_length),
             np.frombuffer(set_leading_ones(starting_hardness, hash_length), dtype=np.uint8),
@@ -84,24 +82,48 @@ class CrusherData:
         self.hardness = np.full(
             (self.size[0], self.size[1]),
             starting_hardness,
-            dtype=np.uint8
+            dtype=np.int32
         )
 
+    # interactions
 
-class Crusher:
+    def set_pixel(self, position, color=None, new_hash: bytes = None, overwrite: bool = False):
+        if not (0 <= position[0] < self.size[0] and 0 <= position[1] < self.size[1]):
+            raise ValueError(f'The position must not be negative and must be smaller than the image size: '
+                             f'{self.size}')
+        if color is None and new_hash is None:
+            raise ValueError('Nothing to set')
+        if overwrite:
+            if new_hash:
+                self.hashes[position] = np.frombuffer(new_hash, dtype=np.uint8)
+            if color:
+                self.image[position] = color
+            return True
+        else:
+            # check hash
+            old_hash = self.hashes[position].tobytes()
+            if new_hash > old_hash:
+                self.image[position] = color
+                self.hashes[position] = new_hash
+                self.hardness[position] = count_leading_ones(new_hash)
+                return True
+            else:
+                return False
 
-    _data: CrusherData
+    def get_image(self):
+        return Image.fromarray(self.image)
 
-    def __init__(self, name):
-
-        self._data = CrusherData(name)
-
-        pass
-
-    def set_pixel(self, position, color, new_hash=None):
-        # TODO
-        pass
-
-    def overwrite(self, position, color=None, hardness=None):
-        # TODO
+    def get_heatmap(self, bw=False):
+        heat = np.repeat(self.hardness, 3, 1)
+        heat = np.reshape(heat, (*self.size, 3))
+        if bw:
+            return Image.fromarray(heat.astype(dtype=np.uint8))
+        else:
+            # return a gradient (green -> red -> yellow -> white -> black, viable until ~64)
+            heat -= starting_hardness
+            fade = np.clip(self.hardness - 40, a_max=None, a_min=0) * 10
+            heat[:, :, 0] = np.clip(np.clip(self.hardness * 32 - 256, a_min=0, a_max=255) - fade, a_min=0, a_max=255)
+            heat[:, :, 1] = np.clip(np.clip(np.abs(256 - 16 * self.hardness), a_min=0, a_max=255) - fade, a_min=0, a_max=255)
+            heat[:, :, 2] = np.clip(np.clip(self.hardness * 32 - 1024, a_min=0, a_max=255) - fade, a_min=0, a_max=255)
+            return Image.fromarray(heat.astype(dtype=np.uint8))
         pass
